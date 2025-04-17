@@ -18,7 +18,7 @@
         <h1>Question JSON Generator</h1>
         <form id="questionForm">
             <label for="prompt">Question Prompt:</label>
-            <textarea id="prompt" required></textarea>
+            <textarea id="prompt" placeholder='Please place a ~ before variables you wish to be randomized i.e. $~ax^{~b}$' required></textarea>
 
             <label for="variables">Variables (as JSON):</label>
             <textarea id="variables" placeholder='{"a": [1, 2, 3], "b": [4, 5, 6]}' required></textarea>
@@ -27,7 +27,7 @@
             <input type="text" id="choices" placeholder="A, B, C, D" required>
 
             <label for="correct">Correct Answer:</label>
-            <input type="text" id="correct" placeholder="A" required>
+            <input type="text" id="correct" placeholder="$(~b*~a)x^{~b-1}$" required>
 
             <button type="button" onclick="generateJson()">Generate JSON</button>
         </form>
