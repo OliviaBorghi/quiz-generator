@@ -2,6 +2,11 @@ import json
 import os
 import random
 import zipfile
+import xml.etree.ElementTree as ET
+from xml.dom import minidom
+import re
+
+
 
 def load_json(file_name):
     """Load the JSON file and return its contents."""
@@ -18,23 +23,23 @@ def process_question(question):
     for var_name, var_values in question['variables'].items():
         randomized_values[var_name] = random.choice(var_values)
     
-    # Update the prompt with the randomized variables
+    # Update the prompt with the randomized variables (using ~ as placeholders)
     updated_prompt = question['prompt']
     for var_name, value in randomized_values.items():
-        updated_prompt = updated_prompt.replace(var_name, str(value))
+        updated_prompt = updated_prompt.replace(f'~{var_name}', str(value))
 
     # Update the choices based on the randomized variables
     updated_choices = []
     for choice in question['choices']:
         updated_choice = choice
         for var_name, value in randomized_values.items():
-            updated_choice = updated_choice.replace(var_name, str(value))
+            updated_choice = updated_choice.replace(f'~{var_name}', str(value))
         updated_choices.append(updated_choice)
 
     # Update the correct answer based on the randomized variables
     updated_correct_answer = question['correct']
     for var_name, value in randomized_values.items():
-        updated_correct_answer = updated_correct_answer.replace(var_name, str(value))
+        updated_correct_answer = updated_correct_answer.replace(f'~{var_name}', str(value))
 
     # Return the processed question with updated prompt, choices, and correct answer
     return {
@@ -76,6 +81,26 @@ def create_qti_package(questions):
     os.rmdir("qti_temp")
 
     return zip_name
+
+def convert_latex_to_mathjax(text):
+    """Convert LaTeX delimited by $...$ into Canvas-friendly MathJax."""
+    return re.sub(r'\$(.+?)\$', r'<script type="math/tex">\1</script>', text)
+
+def generate_qti_item_xml(question_id, prompt, choices, correct):
+    """Generate QTI 1.2 XML for a single multiple choice question."""
+    Element = ET.ElementTree
+    SubElement = ET.SubElement
+
+    item = Element("item", attrib={
+        "ident": question_id,
+        "title": question_id
+        })
+
+def prettify(elem):
+    """Return a pretty-printed XML string for the Element."""
+    rough_string = ET.tostring(elem, 'utf-8')
+    reparsed = minidom.parseString(rough_string)
+    return reparsed.toprettyxml(indent="  ", encoding="utf-8")
 
 
 def main():
