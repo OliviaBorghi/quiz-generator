@@ -185,7 +185,6 @@ def generate_qti_item_xml(question_id, prompt, choices, correct, latex_images):
         else:
             choice_html = f'{choice_text}'
 
-
     # Create the root item element
     item = ET.Element("item", {"ident": question_id, "title": question_id})
 
@@ -223,69 +222,83 @@ def generate_qti_item_xml(question_id, prompt, choices, correct, latex_images):
     SubElement(respcondition, "setvar", attrib={"action": "Set"}).text = "100"
     SubElement(respcondition, "displayfeedback", attrib={"feedbacktype": "Response", "linkrefid": "correct"})
 
-    # Return the prettified XML
-    return prettify(item)
+    # Now wrap the generated item with the full QTI structure
+    questestinterop = ET.Element("questestinterop")
+    assessment = SubElement(questestinterop, "assessment", title="My Quiz")
+    section = SubElement(assessment, "section", ident="root_section")
 
+    # Add the item to the section
+    section.append(item)
+
+    # Prettify the XML output using the prettify function
+    return prettify(questestinterop)
 
 
 def generate_manifest_xml(items, image_files):
     """Generate imsmanifest.xml content for a list of QTI items and images."""
     ns = {
         '': "http://www.imsglobal.org/xsd/imscp_v1p1",  # Default namespace
-        'imsmd': "http://www.imsglobal.org/xsd/imsmd_v1p2",
+        'imsqti': "http://www.imsglobal.org/xsd/imsqti_v1p2",  # QTI namespace
         'xsi': "http://www.w3.org/2001/XMLSchema-instance",
     }
 
+    # Create the manifest element with proper namespaces and schemaLocation
     manifest = ET.Element(
         QName(ns[''], 'manifest'),
         {
-            QName(ns['xsi'], 'schemaLocation'): "http://www.imsglobal.org/xsd/imscp_v1p1 imscp_v1p1.xsd"
+            QName(ns['xsi'], 'schemaLocation'): (
+                "http://www.imsglobal.org/xsd/imscp_v1p1 imscp_v1p1.xsd "
+                "http://www.imsglobal.org/xsd/imsqti_v1p2 imsqti_v1p2.xsd"
+            ),
+            "identifier": "man00001"
         }
     )
 
+    # Create organizations and resources elements
     organizations = ET.SubElement(manifest, QName(ns[''], 'organizations'))
     resources = ET.SubElement(manifest, QName(ns[''], 'resources'))
 
-    # Add QTI items to the manifest
+    # Add QTI items to the resources
     for filename, identifier in items:
-        ET.SubElement(
+        resource = ET.SubElement(
             resources,
             QName(ns[''], 'resource'),
             {
                 "identifier": identifier,
-                "type": "imsqti_item_xmlv1p1",
+                "type": "imsqti_xmlv1p2",  # Use the correct QTI 1.2 type
                 "href": filename
             }
         )
-
-    # Add image resources to the manifest
-    for image_filename in image_files:
-        image_identifier = f"image_{os.path.basename(image_filename)}"  # Unique identifier for the image
-        ET.SubElement(
-            resources,
-            QName(ns[''], 'resource'),
-            {
-                "identifier": image_identifier,
-                "type": "image/png",  # Assuming images are in JPEG format, change if needed
-                "href": f"images/{os.path.basename(image_filename)}"
-            }
-        )
+        # Add the associated file(s) for the resource
+        ET.SubElement(resource, QName(ns[''], 'file'), {"href": filename})
+        for image_filename in image_files:
+            ET.SubElement(resource, QName(ns[''], 'file'), {"href": f"images/{os.path.basename(image_filename)}"})
 
     return prettify(manifest)
+
+def wrap_with_qti_structure(item_xml):
+    qti_header = '''<?xml version="1.0" encoding="UTF-8"?>
+<questestinterop>
+  <assessment title="My Quiz">
+    <section ident="root_section">
+'''
+    qti_footer = '''    </section>
+  </assessment>
+</questestinterop>'''
+
+    return qti_header + item_xml + qti_footer
 
 
 def prettify(elem):
     # Using lxml's tostring function with no escape
     # Serialize the tree to a string with 'xml' encoding, no escaping
     xml_bytes = ET.tostring(elem, pretty_print=True, encoding="utf-8", xml_declaration=True, method="xml")
-    if isinstance(xml_bytes, bytes):
-        xml_str = xml_bytes.decode("utf-8")
-    else:
-        xml_str = xml_bytes  # already a string
+    xml_str = xml_bytes.decode("utf-8")
+    
 
     # Replace escaped characters with literal ones
     xml_str = xml_str.replace("&lt;", "<").replace("&gt;", ">").replace("&amp;", "&")
-
+    xml_str = xml_str.replace("ns0:", '').replace("/ns0:",'')
     return xml_str
 
 
@@ -297,7 +310,7 @@ def main():
     processed_questions = []
     version_id = 1
     for q in questions:
-        for _ in range(1):  # Creating 4 randomized versions of each question
+        for _ in range(4):  # Creating 4 randomized versions of each question
             processed_questions.append(process_question(q, version_id))
             version_id += 1
     

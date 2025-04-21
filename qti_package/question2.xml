@@ -2,16 +2,16 @@
 <questestinterop>
   <assessment title="My Quiz">
     <section ident="root_section">
-      <item ident="power_rule_diff_v1" title="power_rule_diff_v1">
+      <item ident="power_rule_diff_v2" title="power_rule_diff_v2">
         <presentation>
           <material>
-            <mattext texttype="text/html">Differentiate the function <img src="images/aef2b090.png" alt="Question Image" /></mattext>
+            <mattext texttype="text/html">Differentiate the function <img src="images/c67e85c6.png" alt="Question Image" /></mattext>
           </material>
           <response_lid ident="response1" rcardinality="Single">
             <render_choice>
               <response_label ident="choice1">
                 <material>
-                  <mattext texttype="text/html"> <img src="images/0405bb60.png" alt="Choice Image 1" /></mattext>
+                  <mattext texttype="text/html"> <img src="images/73882ab1.png" alt="Choice Image 1" /></mattext>
                 </material>
               </response_label>
               <response_label ident="choice2">

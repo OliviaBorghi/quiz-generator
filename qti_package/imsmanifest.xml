@@ -1,12 +1,98 @@
 <?xml version='1.0' encoding='utf-8'?>
-<ns0:manifest xmlns:ns0="http://www.imsglobal.org/xsd/imscp_v1p1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.imsglobal.org/xsd/imscp_v1p1 imscp_v1p1.xsd">
-  <ns0:organizations/>
-  <ns0:resources>
-    <ns0:resource identifier="power_rule_diff_v1" type="imsqti_item_xmlv1p1" href="question1.xml"/>
-    <ns0:resource identifier="image_33b77cb4.png" type="image/png" href="images/33b77cb4.png"/>
-    <ns0:resource identifier="image_c4ca4238.png" type="image/png" href="images/c4ca4238.png"/>
-    <ns0:resource identifier="image_75299c25.png" type="image/png" href="images/75299c25.png"/>
-    <ns0:resource identifier="image_eccbc87e.png" type="image/png" href="images/eccbc87e.png"/>
-    <ns0:resource identifier="image_a87ff679.png" type="image/png" href="images/a87ff679.png"/>
-  </ns0:resources>
-</ns0:manifest>
+<manifest xmlns:ns0="http://www.imsglobal.org/xsd/imscp_v1p1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.imsglobal.org/xsd/imscp_v1p1 imscp_v1p1.xsd http://www.imsglobal.org/xsd/imsqti_v1p2 imsqti_v1p2.xsd" identifier="man00001">
+  <organizations/>
+  <resources>
+    <resource identifier="power_rule_diff_v1" type="imsqti_xmlv1p2" href="question1.xml">
+      <file href="question1.xml"/>
+      <file href="images/aef2b090.png"/>
+      <file href="images/0405bb60.png"/>
+      <file href="images/75299c25.png"/>
+      <file href="images/eccbc87e.png"/>
+      <file href="images/a87ff679.png"/>
+      <file href="images/c67e85c6.png"/>
+      <file href="images/73882ab1.png"/>
+      <file href="images/75299c25.png"/>
+      <file href="images/eccbc87e.png"/>
+      <file href="images/a87ff679.png"/>
+      <file href="images/6c48217a.png"/>
+      <file href="images/5d7b9adc.png"/>
+      <file href="images/75299c25.png"/>
+      <file href="images/eccbc87e.png"/>
+      <file href="images/a87ff679.png"/>
+      <file href="images/6c48217a.png"/>
+      <file href="images/5d7b9adc.png"/>
+      <file href="images/75299c25.png"/>
+      <file href="images/eccbc87e.png"/>
+      <file href="images/a87ff679.png"/>
+    </resource>
+    <resource identifier="power_rule_diff_v2" type="imsqti_xmlv1p2" href="question2.xml">
+      <file href="question2.xml"/>
+      <file href="images/aef2b090.png"/>
+      <file href="images/0405bb60.png"/>
+      <file href="images/75299c25.png"/>
+      <file href="images/eccbc87e.png"/>
+      <file href="images/a87ff679.png"/>
+      <file href="images/c67e85c6.png"/>
+      <file href="images/73882ab1.png"/>
+      <file href="images/75299c25.png"/>
+      <file href="images/eccbc87e.png"/>
+      <file href="images/a87ff679.png"/>
+      <file href="images/6c48217a.png"/>
+      <file href="images/5d7b9adc.png"/>
+      <file href="images/75299c25.png"/>
+      <file href="images/eccbc87e.png"/>
+      <file href="images/a87ff679.png"/>
+      <file href="images/6c48217a.png"/>
+      <file href="images/5d7b9adc.png"/>
+      <file href="images/75299c25.png"/>
+      <file href="images/eccbc87e.png"/>
+      <file href="images/a87ff679.png"/>
+    </resource>
+    <resource identifier="power_rule_diff_v3" type="imsqti_xmlv1p2" href="question3.xml">
+      <file href="question3.xml"/>
+      <file href="images/aef2b090.png"/>
+      <file href="images/0405bb60.png"/>
+      <file href="images/75299c25.png"/>
+      <file href="images/eccbc87e.png"/>
+      <file href="images/a87ff679.png"/>
+      <file href="images/c67e85c6.png"/>
+      <file href="images/73882ab1.png"/>
+      <file href="images/75299c25.png"/>
+      <file href="images/eccbc87e.png"/>
+      <file href="images/a87ff679.png"/>
+      <file href="images/6c48217a.png"/>
+      <file href="images/5d7b9adc.png"/>
+      <file href="images/75299c25.png"/>
+      <file href="images/eccbc87e.png"/>
+      <file href="images/a87ff679.png"/>
+      <file href="images/6c48217a.png"/>
+      <file href="images/5d7b9adc.png"/>
+      <file href="images/75299c25.png"/>
+      <file href="images/eccbc87e.png"/>
+      <file href="images/a87ff679.png"/>
+    </resource>
+    <resource identifier="power_rule_diff_v4" type="imsqti_xmlv1p2" href="question4.xml">
+      <file href="question4.xml"/>
+      <file href="images/aef2b090.png"/>
+      <file href="images/0405bb60.png"/>
+      <file href="images/75299c25.png"/>
+      <file href="images/eccbc87e.png"/>
+      <file href="images/a87ff679.png"/>
+      <file href="images/c67e85c6.png"/>
+      <file href="images/73882ab1.png"/>
+      <file href="images/75299c25.png"/>
+      <file href="images/eccbc87e.png"/>
+      <file href="images/a87ff679.png"/>
+      <file href="images/6c48217a.png"/>
+      <file href="images/5d7b9adc.png"/>
+      <file href="images/75299c25.png"/>
+      <file href="images/eccbc87e.png"/>
+      <file href="images/a87ff679.png"/>
+      <file href="images/6c48217a.png"/>
+      <file href="images/5d7b9adc.png"/>
+      <file href="images/75299c25.png"/>
+      <file href="images/eccbc87e.png"/>
+      <file href="images/a87ff679.png"/>
+    </resource>
+  </resources>
+</manifest>
