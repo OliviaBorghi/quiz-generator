@@ -143,7 +143,7 @@ def generate_latex_images(prompt, choices, question_id):
         for latex_expr in latex_matches:
             filename = sanitize_latex_expr(latex_expr)
             latex_images.append((latex_expr,filename))
-    
+
     if not latex_images:
         print(f"Warning: No LaTeX expressions found for question {question_id}")
     
@@ -160,7 +160,10 @@ def generate_qti_item_xml(question_id, prompt, choices, correct, latex_images):
     prompt_latex = prompt.split('$')[1] if '$' in prompt else ""  # LaTeX expression between $ symbols
 
     # Create <img> HTML for LaTeX image in prompt
-    prompt_html = f'{prompt_text} <img src="images/{latex_images[0][1]}" alt="Question Image" />'
+    if prompt_latex:
+        prompt_html = f'{prompt_text} <img src="images/{latex_images[0][1]}" alt="Question Image" />'
+    else:
+        prompt_html = f'{prompt_text}'
 
     # Generate images for each choice and use them in the choices
     choice_images = []
@@ -169,8 +172,13 @@ def generate_qti_item_xml(question_id, prompt, choices, correct, latex_images):
         choice_latex = choice.split('$')[1] if '$' in choice else ""  # LaTeX expression between $ symbols
 
         # Create <img> HTML for LaTeX image in choice
-        choice_html = f'{choice_text} <img src="images/{latex_images[i + 1][1]}" alt="Choice Image {i + 1}" />'
-        choice_images.append(choice_html)
+        if choice_latex:
+            choice_html = f'{choice_text} <img src="images/{latex_images[i + 1][1]}" alt="Choice Image {i + 1}" />'
+            choice_images.append(choice_html)
+
+        else:
+            choice_html = f'{choice_text}'
+
 
     # Create the root item element
     item = ET.Element("item", {"ident": question_id, "title": question_id})
@@ -277,7 +285,7 @@ def main():
     processed_questions = []
     version_id = 1
     for q in questions:
-        for _ in range(4):  # Creating 4 randomized versions of each question
+        for _ in range(1):  # Creating 4 randomized versions of each question
             processed_questions.append(process_question(q, version_id))
             version_id += 1
     

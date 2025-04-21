@@ -2,28 +2,28 @@
 <item ident="power_rule_diff_v1" title="power_rule_diff_v1">
   <presentation>
     <material>
-      <mattext texttype="text/html"><![CDATA[Differentiate the function <img src="images/a5fef8a2.png" alt="Question Image" />]]></mattext>
+      <mattext texttype="text/html"><![CDATA[Differentiate the function <img src="images/73882ab1.png" alt="Question Image" />]]></mattext>
     </material>
     <response_lid ident="response1" rcardinality="Single">
       <render_choice>
         <response_label ident="choice1">
           <material>
-            <mattext texttype="text/html"><![CDATA[ <img src="images/462e61ad.png" alt="Choice Image 1" />]]></mattext>
+            <mattext texttype="text/html"><![CDATA[ <img src="images/73882ab1.png" alt="Choice Image 1" />]]></mattext>
           </material>
         </response_label>
         <response_label ident="choice2">
           <material>
-            <mattext texttype="text/html"><![CDATA[ <img src="images/c00a6537.png" alt="Choice Image 2" />]]></mattext>
+            <mattext texttype="text/html"><![CDATA[ <img src="images/c81e728d.png" alt="Choice Image 2" />]]></mattext>
           </material>
         </response_label>
         <response_label ident="choice3">
           <material>
-            <mattext texttype="text/html"><![CDATA[ <img src="images/08b032f3.png" alt="Choice Image 3" />]]></mattext>
+            <mattext texttype="text/html"><![CDATA[ <img src="images/eccbc87e.png" alt="Choice Image 3" />]]></mattext>
           </material>
         </response_label>
         <response_label ident="choice4">
           <material>
-            <mattext texttype="text/html"><![CDATA[ <img src="images/981a20ea.png" alt="Choice Image 4" />]]></mattext>
+            <mattext texttype="text/html"><![CDATA[ <img src="images/a87ff679.png" alt="Choice Image 4" />]]></mattext>
           </material>
         </response_label>
       </render_choice>

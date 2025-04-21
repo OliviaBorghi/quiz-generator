@@ -2,18 +2,17 @@
   "questions": [
     {
       "id": "power_rule_diff",
-      "prompt": "Differentiate the function $f(x) = ~a x^{~b}$.",
+      "prompt": "Differentiate the function $~a$",
       "variables": {
-        "a": [1, 2, 3, 4],
-        "b": [2, 3, 4, 5]
+        "a": [1, -2, -33, 444444]
       },
       "choices": [
-        "$~b * ~a x^{~b-1}$",
-        "$~a * ~b x^{~b}$",
-        "$~a x^{~b-1}$",
-        "$~a x^{~b+1}$"
+        "$~a$",
+        "$2$",
+        "$3$",
+        "$4$"
       ],
-      "correct": "$~b * ~a x^{~b-1}$"
+      "correct": "$~a$"
     }
   ]
 }
