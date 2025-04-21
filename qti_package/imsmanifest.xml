@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns="http://www.imsglobal.org/xsd/imscp_v1p1" xmlns:imsmd="http://www.imsglobal.org/xsd/imsmd_v1p2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" identifier="MANIFEST1" xsi:schemaLocation="http://www.imsglobal.org/xsd/imscp_v1p1 imscp_v1p1.xsd">
+  <organizations/>
+  <resources>
+    <resource identifier="power_rule_diff_v1" type="imsqti_item_xmlv1p1" href="question1.xml"/>
+    <resource identifier="power_rule_diff_v2" type="imsqti_item_xmlv1p1" href="question2.xml"/>
+    <resource identifier="power_rule_diff_v3" type="imsqti_item_xmlv1p1" href="question3.xml"/>
+    <resource identifier="power_rule_diff_v4" type="imsqti_item_xmlv1p1" href="question4.xml"/>
+  </resources>
+</manifest>

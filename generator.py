@@ -90,57 +90,49 @@ def convert_latex_to_mathjax(text):
     return re.sub(r'\$(.+?)\$', r'<script type="math/tex">\1</script>', text)
 
 def generate_qti_item_xml(question_id, prompt, choices, correct):
-    """Generate QTI 1.2 XML for a single multiple choice question with raw HTML MathJax."""
+    """Generate QTI 1.2 XML for a single multiple choice question."""
+    Element = ET.ElementTree
+    SubElement = ET.SubElement
 
-    # We'll still use ElementTree to build the structure
+    # Convert LaTeX to MathJax HTML format
+    prompt_html = convert_latex_to_mathjax(prompt)
+    choices_html = [convert_latex_to_mathjax(c) for c in choices]
+
     item = ET.Element("item", {"ident": question_id, "title": question_id})
 
-    presentation = ET.SubElement(item, "presentation")
-    material = ET.SubElement(presentation, "material")
-    mattext = ET.SubElement(material, "mattext", attrib={"texttype": "text/html"})
-    mattext.text = "__PROMPT_PLACEHOLDER__"  # Placeholder we'll replace later
+    presentation = SubElement(item, "presentation")
+    material = SubElement(presentation, "material")
+    mattext = SubElement(material, "mattext", attrib={"texttype": "text/html"})
+    # Ensure raw HTML is inserted directly without escaping
+    mattext.text = prompt_html
 
-    response_lid = ET.SubElement(presentation, "response_lid", attrib={"ident": "response1", "rcardinality": "Single"})
-    render_choice = ET.SubElement(response_lid, "render_choice")
+    response_lid = SubElement(presentation, "response_lid", attrib={"ident": "response1", "rcardinality": "Single"})
+    render_choice = SubElement(response_lid, "render_choice")
 
-    choice_idents = []
-    for i, choice_text in enumerate(choices):
+    for i, choice_text in enumerate(choices_html):
         ident = f"choice{i + 1}"
-        choice_idents.append((ident, choice_text))
-        response_label = ET.SubElement(render_choice, "response_label", attrib={"ident": ident})
-        choice_material = ET.SubElement(response_label, "material")
-        choice_mattext = ET.SubElement(choice_material, "mattext", attrib={"texttype": "text/html"})
-        choice_mattext.text = f"__CHOICE_PLACEHOLDER_{i}__"  # Placeholder
+        response_label = SubElement(render_choice, "response_label", attrib={"ident": ident})
+        choice_material = SubElement(response_label, "material")
+        choice_mattext = SubElement(choice_material, "mattext", attrib={"texttype": "text/html"})
+        # Ensure raw HTML is inserted directly without escaping
+        choice_mattext.text = choice_text
 
     # Resprocessing section
-    resprocessing = ET.SubElement(item, "resprocessing")
-    outcomes = ET.SubElement(resprocessing, "outcomes")
-    ET.SubElement(outcomes, "decvar", attrib={
-        "varname": "SCORE", "vartype": "Decimal", "minvalue": "0", "maxvalue": "100", "cutvalue": "50"
-    })
+    resprocessing = SubElement(item, "resprocessing")
+    outcomes = SubElement(resprocessing, "outcomes")
+    SubElement(outcomes, "decvar", attrib={"varname": "SCORE", "vartype": "Decimal", "minvalue": "0", "maxvalue": "100", "cutvalue": "50"})
 
     correct_index = choices.index(correct)
     correct_ident = f"choice{correct_index + 1}"
 
-    respcondition = ET.SubElement(resprocessing, "respcondition", attrib={"continue": "No"})
-    conditionvar = ET.SubElement(respcondition, "conditionvar")
-    varequal = ET.SubElement(conditionvar, "varequal", attrib={"respident": "response1"})
+    respcondition = SubElement(resprocessing, "respcondition", attrib={"continue": "No"})
+    conditionvar = SubElement(respcondition, "conditionvar")
+    varequal = SubElement(conditionvar, "varequal", attrib={"respident": "response1"})
     varequal.text = correct_ident
-    ET.SubElement(respcondition, "setvar", attrib={"action": "Set"}).text = "100"
-    ET.SubElement(respcondition, "displayfeedback", attrib={"feedbacktype": "Response", "linkrefid": "correct"})
+    SubElement(respcondition, "setvar", attrib={"action": "Set"}).text = "100"
+    SubElement(respcondition, "displayfeedback", attrib={"feedbacktype": "Response", "linkrefid": "correct"})
 
-    # Convert to string
-    xml_str = prettify(item).decode('utf-8')
-
-    # Now insert raw HTML directly
-    prompt_html = convert_latex_to_mathjax(prompt)
-    xml_str = xml_str.replace("__PROMPT_PLACEHOLDER__", prompt_html)
-    for i, (_, choice_text) in enumerate(choice_idents):
-        choice_html = convert_latex_to_mathjax(choice_text)
-        xml_str = xml_str.replace(f"__CHOICE_PLACEHOLDER_{i}__", choice_html)
-
-    return xml_str
-
+    return prettify(item).decode('utf-8')
 
 
 def generate_manifest_xml(items):
