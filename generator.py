@@ -13,7 +13,7 @@ def load_json(file_name):
     with open(file_name, "r", encoding="utf-8") as file:
         return json.load(file)
 
-def process_question(question):
+def process_question(question, version_id):
     """Randomize variables and update question prompt and choices."""
     
     # Create a dictionary to store the randomized values
@@ -43,58 +43,138 @@ def process_question(question):
 
     # Return the processed question with updated prompt, choices, and correct answer
     return {
-        'id': question['id'],
+        'id': f"{question['id']}_v{version_id}",  # Append version id to make each question unique        'prompt': updated_prompt,
         'prompt': updated_prompt,
         'choices': updated_choices,
         'correct': updated_correct_answer
     }
 
 def create_qti_package(questions):
-    #create qti package with processed questions
+    # Create QTI package with processed questions
+    os.makedirs("qti_temp", exist_ok=True)
 
-    os.makedirs("qti_temp", exist_ok = True)
-
-    #generate XML files
+    # Generate XML files
     manifest_items = []
 
-    for i, q in enumerate(questions) :
-    	file_name = f'question{i + 1}.xml'
-    	file_path = os.path.join("qti_temp", file_name)
-    	manifest_items.append((file_name, q['id']))
-    	with open(file_path, "wb") as f :
-    		f.write(generate_qti_item_xml(q['id'], q['prompt'], q['choices'], q['correct']))
+    for i, q in enumerate(questions):
+        file_name = f'question{i + 1}.xml'
+        file_path = os.path.join("qti_temp", file_name)
+        manifest_items.append((file_name, q['id']))
+        with open(file_path, "wb") as f:
+            # Encode the string returned by generate_qti_item_xml() into bytes
+            f.write(generate_qti_item_xml(q['id'], q['prompt'], q['choices'], q['correct']).encode('utf-8'))
 
-    #create manifest
-    with open("qti_temp/imsmanifest.xml", "w", encoding = "utf-8") as f :
-    	f.write(generate_manifest_xml(manifest_items))
+    # Create manifest
+    with open("qti_temp/imsmanifest.xml", "w", encoding="utf-8") as f:
+        # This should write a string, not bytes
+        f.write(generate_manifest_xml(manifest_items))
 
-    #zip the contents
+    # Zip the contents
     zip_name = "qti_package.zip"
-    with zipfile.ZipFile(zip_name, "w", zipfile.ZIP_DEFLATED) as zipf :
-    	for root, _, files in os.walk("qti_temp") :
-    		for file in files :
-    			zipf.write(os.path.join(root,file), file)
+    with zipfile.ZipFile(zip_name, "w", zipfile.ZIP_DEFLATED) as zipf:
+        for root, _, files in os.walk("qti_temp"):
+            for file in files:
+                zipf.write(os.path.join(root, file), file)
 
-    #cleanup
+    # Clean up
     for file in os.listdir("qti_temp"):
         os.remove(os.path.join("qti_temp", file))
     os.rmdir("qti_temp")
 
     return zip_name
 
+
+
 def convert_latex_to_mathjax(text):
     """Convert LaTeX delimited by $...$ into Canvas-friendly MathJax."""
     return re.sub(r'\$(.+?)\$', r'<script type="math/tex">\1</script>', text)
 
 def generate_qti_item_xml(question_id, prompt, choices, correct):
-    """Generate QTI 1.2 XML for a single multiple choice question."""
-    Element = ET.ElementTree
-    SubElement = ET.SubElement
+    """Generate QTI 1.2 XML for a single multiple choice question with raw HTML MathJax."""
 
-    item = Element("item", attrib={
-        "ident": question_id,
-        "title": question_id
+    # We'll still use ElementTree to build the structure
+    item = ET.Element("item", {"ident": question_id, "title": question_id})
+
+    presentation = ET.SubElement(item, "presentation")
+    material = ET.SubElement(presentation, "material")
+    mattext = ET.SubElement(material, "mattext", attrib={"texttype": "text/html"})
+    mattext.text = "__PROMPT_PLACEHOLDER__"  # Placeholder we'll replace later
+
+    response_lid = ET.SubElement(presentation, "response_lid", attrib={"ident": "response1", "rcardinality": "Single"})
+    render_choice = ET.SubElement(response_lid, "render_choice")
+
+    choice_idents = []
+    for i, choice_text in enumerate(choices):
+        ident = f"choice{i + 1}"
+        choice_idents.append((ident, choice_text))
+        response_label = ET.SubElement(render_choice, "response_label", attrib={"ident": ident})
+        choice_material = ET.SubElement(response_label, "material")
+        choice_mattext = ET.SubElement(choice_material, "mattext", attrib={"texttype": "text/html"})
+        choice_mattext.text = f"__CHOICE_PLACEHOLDER_{i}__"  # Placeholder
+
+    # Resprocessing section
+    resprocessing = ET.SubElement(item, "resprocessing")
+    outcomes = ET.SubElement(resprocessing, "outcomes")
+    ET.SubElement(outcomes, "decvar", attrib={
+        "varname": "SCORE", "vartype": "Decimal", "minvalue": "0", "maxvalue": "100", "cutvalue": "50"
+    })
+
+    correct_index = choices.index(correct)
+    correct_ident = f"choice{correct_index + 1}"
+
+    respcondition = ET.SubElement(resprocessing, "respcondition", attrib={"continue": "No"})
+    conditionvar = ET.SubElement(respcondition, "conditionvar")
+    varequal = ET.SubElement(conditionvar, "varequal", attrib={"respident": "response1"})
+    varequal.text = correct_ident
+    ET.SubElement(respcondition, "setvar", attrib={"action": "Set"}).text = "100"
+    ET.SubElement(respcondition, "displayfeedback", attrib={"feedbacktype": "Response", "linkrefid": "correct"})
+
+    # Convert to string
+    xml_str = prettify(item).decode('utf-8')
+
+    # Now insert raw HTML directly
+    prompt_html = convert_latex_to_mathjax(prompt)
+    xml_str = xml_str.replace("__PROMPT_PLACEHOLDER__", prompt_html)
+    for i, (_, choice_text) in enumerate(choice_idents):
+        choice_html = convert_latex_to_mathjax(choice_text)
+        xml_str = xml_str.replace(f"__CHOICE_PLACEHOLDER_{i}__", choice_html)
+
+    return xml_str
+
+
+
+def generate_manifest_xml(items):
+    """
+    Generate imsmanifest.xml content for a list of QTI items.
+    
+    Args:
+        items (list of tuples): Each tuple contains (filename, identifier)
+    
+    Returns:
+        str: The pretty-printed XML string for the manifest
+    """
+    ns = {
+        'xmlns': "http://www.imsglobal.org/xsd/imscp_v1p1",
+        'xmlns:imsmd': "http://www.imsglobal.org/xsd/imsmd_v1p2",
+        'xmlns:xsi': "http://www.w3.org/2001/XMLSchema-instance",
+        'xsi:schemaLocation': "http://www.imsglobal.org/xsd/imscp_v1p1 imscp_v1p1.xsd"
+    }
+
+    manifest = ET.Element("manifest", attrib={"identifier": "MANIFEST1", **ns})
+    
+    organizations = ET.SubElement(manifest, "organizations")
+    resources = ET.SubElement(manifest, "resources")
+
+    for filename, identifier in items:
+        ET.SubElement(resources, "resource", {
+            "identifier": identifier,
+            "type": "imsqti_item_xmlv1p1",
+            "href": filename
         })
+
+    # Convert the XML element tree to a string
+    return prettify(manifest).decode('utf-8')
+
 
 def prettify(elem):
     """Return a pretty-printed XML string for the Element."""
@@ -105,20 +185,20 @@ def prettify(elem):
 
 def main():
     """Main entry point for the script."""
-    # Load the questions from the JSON file
     questions = load_json("example.json")["questions"]
     
-    # Process the questions
+    # Process the questions and generate randomized versions
     processed_questions = []
-	for q in questions:
-    	for _ in range(4):  # Generate 4 variants
-        	processed_questions.append(process_question(q))
-
+    version_id = 1
+    for q in questions:
+        for _ in range(4):  # Creating 4 randomized versions of each question
+            processed_questions.append(process_question(q, version_id))
+            version_id += 1
     
     # Create the QTI package
     qti_package = create_qti_package(processed_questions)
-    
     print(f"QTI package created: {qti_package}")
+
 
 # Only run the script's main logic if executed directly (not imported as a module)
 if __name__ == "__main__":
