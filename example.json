@@ -2,13 +2,13 @@
   "questions": [
     {
       "id": "power_rule_diff",
-      "prompt": "Differentiate the function $~a$",
+      "prompt": "Differentiate the function $\\int_0^{~a} f(x) dx$",
       "variables": {
         "a": [1, -2, -33, 444444]
       },
       "choices": [
         "$~a$",
-        "$2$",
+        "$X^2$",
         "$3$",
         "$4$"
       ],

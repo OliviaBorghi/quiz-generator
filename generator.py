@@ -11,6 +11,8 @@ from lxml.etree import QName
 
 import hashlib
 
+import html
+
 
 def load_json(file_name):
     """Load the JSON file and return its contents."""
@@ -31,23 +33,27 @@ def sanitize_latex_expr(latex_expr):
 
 
 def save_latex_image(latex_str, image_filename):
-    """Save LaTeX string as an image."""
+    """Save LaTeX string as a compact image with dynamic figure size."""
     if not latex_str:
         print("Empty LaTeX string detected, skipping...")
-        return  # Skip this LaTeX string if it's empty
+        return
 
     try:
-        fig, ax = plt.subplots(figsize=(5, 2))  # You can adjust the size
-        ax.text(0.5, 0.5, f'${latex_str}$', fontsize=20, ha='center', va='center')
+        # Estimate width based on string length (characters) — tune scaling as needed
+        base_width = 0  # Minimum width
+        width_per_char = 0.01  # Add this much width per character
+        estimated_width = base_width + width_per_char * len(latex_str)
+        height = 0.4  # Constant height for inline math
 
-        # Remove axes for clean image
+        fig, ax = plt.subplots(figsize=(estimated_width, height))
+        ax.text(0.5, 0.5, f'${latex_str}$', fontsize=14, ha='center', va='center')
+
         ax.set_axis_off()
 
-        # Create canvas and save figure
         canvas = agg.FigureCanvasAgg(fig)
-        canvas.print_figure(image_filename, dpi=300, bbox_inches="tight", pad_inches=0.1)
+        canvas.print_figure(image_filename, dpi=200, bbox_inches='tight', pad_inches=0.05)
 
-        plt.close(fig)  # Close the plot to free memory
+        plt.close(fig)
     except Exception as e:
         print(f"Error saving LaTeX image for expression: {latex_str}. Error: {e}")
 
@@ -187,7 +193,7 @@ def generate_qti_item_xml(question_id, prompt, choices, correct, latex_images):
     presentation = SubElement(item, "presentation")
     material = SubElement(presentation, "material")
     mattext = SubElement(material, "mattext", attrib={"texttype": "text/html"})
-    mattext.text = safe_cdata(prompt_html)  # Use safe CDATA for prompt HTML
+    mattext.text = prompt_html
 
     # Add response section
     response_lid = SubElement(presentation, "response_lid", attrib={"ident": "response1", "rcardinality": "Single"})
@@ -199,7 +205,7 @@ def generate_qti_item_xml(question_id, prompt, choices, correct, latex_images):
         response_label = SubElement(render_choice, "response_label", attrib={"ident": ident})
         choice_material = SubElement(response_label, "material")
         choice_mattext = SubElement(choice_material, "mattext", attrib={"texttype": "text/html"})
-        choice_mattext.text = safe_cdata(choice_html)  # Use safe CDATA for choices
+        choice_mattext.text = choice_html
 
     # Add resprocessing section for feedback and scoring
     resprocessing = SubElement(item, "resprocessing")
@@ -218,7 +224,7 @@ def generate_qti_item_xml(question_id, prompt, choices, correct, latex_images):
     SubElement(respcondition, "displayfeedback", attrib={"feedbacktype": "Response", "linkrefid": "correct"})
 
     # Return the prettified XML
-    return prettify(item).decode('utf-8')
+    return prettify(item)
 
 
 
@@ -265,17 +271,23 @@ def generate_manifest_xml(items, image_files):
             }
         )
 
-    return prettify(manifest).decode('utf-8')
+    return prettify(manifest)
 
 
 def prettify(elem):
-    return ET.tostring(elem, pretty_print=True, encoding="utf-8", xml_declaration=True)
+    # Using lxml's tostring function with no escape
+    # Serialize the tree to a string with 'xml' encoding, no escaping
+    xml_bytes = ET.tostring(elem, pretty_print=True, encoding="utf-8", xml_declaration=True, method="xml")
+    if isinstance(xml_bytes, bytes):
+        xml_str = xml_bytes.decode("utf-8")
+    else:
+        xml_str = xml_bytes  # already a string
 
-def safe_cdata(text):
-    """Ensure text is safe for inclusion inside a CDATA section by replacing ']]>'."""
-    if ']]>' in text:
-        text = text.replace(']]>', ']]&gt;')  # Replace ']]>' with a safe version
-    return ET.CDATA(text)
+    # Replace escaped characters with literal ones
+    xml_str = xml_str.replace("&lt;", "<").replace("&gt;", ">").replace("&amp;", "&")
+
+    return xml_str
+
 
 def main():
     """Main entry point for the script."""

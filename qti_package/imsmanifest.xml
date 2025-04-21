@@ -3,8 +3,9 @@
   <ns0:organizations/>
   <ns0:resources>
     <ns0:resource identifier="power_rule_diff_v1" type="imsqti_item_xmlv1p1" href="question1.xml"/>
-    <ns0:resource identifier="image_73882ab1.png" type="image/png" href="images/73882ab1.png"/>
-    <ns0:resource identifier="image_c81e728d.png" type="image/png" href="images/c81e728d.png"/>
+    <ns0:resource identifier="image_33b77cb4.png" type="image/png" href="images/33b77cb4.png"/>
+    <ns0:resource identifier="image_c4ca4238.png" type="image/png" href="images/c4ca4238.png"/>
+    <ns0:resource identifier="image_75299c25.png" type="image/png" href="images/75299c25.png"/>
     <ns0:resource identifier="image_eccbc87e.png" type="image/png" href="images/eccbc87e.png"/>
     <ns0:resource identifier="image_a87ff679.png" type="image/png" href="images/a87ff679.png"/>
   </ns0:resources>
