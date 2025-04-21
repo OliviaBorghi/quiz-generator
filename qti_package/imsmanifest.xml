@@ -1,10 +1,30 @@
-<?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns="http://www.imsglobal.org/xsd/imscp_v1p1" xmlns:imsmd="http://www.imsglobal.org/xsd/imsmd_v1p2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" identifier="MANIFEST1" xsi:schemaLocation="http://www.imsglobal.org/xsd/imscp_v1p1 imscp_v1p1.xsd">
-  <organizations/>
-  <resources>
-    <resource identifier="power_rule_diff_v1" type="imsqti_item_xmlv1p1" href="question1.xml"/>
-    <resource identifier="power_rule_diff_v2" type="imsqti_item_xmlv1p1" href="question2.xml"/>
-    <resource identifier="power_rule_diff_v3" type="imsqti_item_xmlv1p1" href="question3.xml"/>
-    <resource identifier="power_rule_diff_v4" type="imsqti_item_xmlv1p1" href="question4.xml"/>
-  </resources>
-</manifest>
+<?xml version='1.0' encoding='utf-8'?>
+<ns0:manifest xmlns:ns0="http://www.imsglobal.org/xsd/imscp_v1p1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.imsglobal.org/xsd/imscp_v1p1 imscp_v1p1.xsd">
+  <ns0:organizations/>
+  <ns0:resources>
+    <ns0:resource identifier="power_rule_diff_v1" type="imsqti_item_xmlv1p1" href="question1.xml"/>
+    <ns0:resource identifier="power_rule_diff_v2" type="imsqti_item_xmlv1p1" href="question2.xml"/>
+    <ns0:resource identifier="power_rule_diff_v3" type="imsqti_item_xmlv1p1" href="question3.xml"/>
+    <ns0:resource identifier="power_rule_diff_v4" type="imsqti_item_xmlv1p1" href="question4.xml"/>
+    <ns0:resource identifier="image_a5fef8a2.png" type="image/png" href="images/a5fef8a2.png"/>
+    <ns0:resource identifier="image_462e61ad.png" type="image/png" href="images/462e61ad.png"/>
+    <ns0:resource identifier="image_c00a6537.png" type="image/png" href="images/c00a6537.png"/>
+    <ns0:resource identifier="image_08b032f3.png" type="image/png" href="images/08b032f3.png"/>
+    <ns0:resource identifier="image_981a20ea.png" type="image/png" href="images/981a20ea.png"/>
+    <ns0:resource identifier="image_19b57b94.png" type="image/png" href="images/19b57b94.png"/>
+    <ns0:resource identifier="image_789a89d5.png" type="image/png" href="images/789a89d5.png"/>
+    <ns0:resource identifier="image_d1e61ea7.png" type="image/png" href="images/d1e61ea7.png"/>
+    <ns0:resource identifier="image_5a3858b8.png" type="image/png" href="images/5a3858b8.png"/>
+    <ns0:resource identifier="image_0594c4f3.png" type="image/png" href="images/0594c4f3.png"/>
+    <ns0:resource identifier="image_f77a1616.png" type="image/png" href="images/f77a1616.png"/>
+    <ns0:resource identifier="image_4a83a923.png" type="image/png" href="images/4a83a923.png"/>
+    <ns0:resource identifier="image_3184e51b.png" type="image/png" href="images/3184e51b.png"/>
+    <ns0:resource identifier="image_1c1d84fa.png" type="image/png" href="images/1c1d84fa.png"/>
+    <ns0:resource identifier="image_4b62c8c7.png" type="image/png" href="images/4b62c8c7.png"/>
+    <ns0:resource identifier="image_f77a1616.png" type="image/png" href="images/f77a1616.png"/>
+    <ns0:resource identifier="image_4a83a923.png" type="image/png" href="images/4a83a923.png"/>
+    <ns0:resource identifier="image_3184e51b.png" type="image/png" href="images/3184e51b.png"/>
+    <ns0:resource identifier="image_1c1d84fa.png" type="image/png" href="images/1c1d84fa.png"/>
+    <ns0:resource identifier="image_4b62c8c7.png" type="image/png" href="images/4b62c8c7.png"/>
+  </ns0:resources>
+</ns0:manifest>

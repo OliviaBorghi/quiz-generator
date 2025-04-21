@@ -1,29 +1,29 @@
-<?xml version="1.0" encoding="utf-8"?>
+<?xml version='1.0' encoding='utf-8'?>
 <item ident="power_rule_diff_v3" title="power_rule_diff_v3">
   <presentation>
     <material>
-      <mattext texttype="text/html">Differentiate the function &lt;script type=&quot;math/tex&quot;&gt;f(x) = 4 x^{3}&lt;/script&gt;.</mattext>
+      <mattext texttype="text/html"><![CDATA[Differentiate the function <img src="images/f77a1616.png" alt="Question Image" />]]></mattext>
     </material>
     <response_lid ident="response1" rcardinality="Single">
       <render_choice>
         <response_label ident="choice1">
           <material>
-            <mattext texttype="text/html">&lt;script type=&quot;math/tex&quot;&gt;3 * 4 x^{3-1}&lt;/script&gt;</mattext>
+            <mattext texttype="text/html"><![CDATA[ <img src="images/4a83a923.png" alt="Choice Image 1" />]]></mattext>
           </material>
         </response_label>
         <response_label ident="choice2">
           <material>
-            <mattext texttype="text/html">&lt;script type=&quot;math/tex&quot;&gt;4 * 3 x^{3}&lt;/script&gt;</mattext>
+            <mattext texttype="text/html"><![CDATA[ <img src="images/3184e51b.png" alt="Choice Image 2" />]]></mattext>
           </material>
         </response_label>
         <response_label ident="choice3">
           <material>
-            <mattext texttype="text/html">&lt;script type=&quot;math/tex&quot;&gt;4 x^{3-1}&lt;/script&gt;</mattext>
+            <mattext texttype="text/html"><![CDATA[ <img src="images/1c1d84fa.png" alt="Choice Image 3" />]]></mattext>
           </material>
         </response_label>
         <response_label ident="choice4">
           <material>
-            <mattext texttype="text/html">&lt;script type=&quot;math/tex&quot;&gt;4 x^{3+1}&lt;/script&gt;</mattext>
+            <mattext texttype="text/html"><![CDATA[ <img src="images/4b62c8c7.png" alt="Choice Image 4" />]]></mattext>
           </material>
         </response_label>
       </render_choice>

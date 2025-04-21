@@ -2,10 +2,14 @@ import json
 import os
 import random
 import zipfile
-import xml.etree.ElementTree as ET
-from xml.dom import minidom
+from lxml import etree as ET
 import re
+import matplotlib.pyplot as plt
+import shutil
+import matplotlib.backends.backend_agg as agg
+from lxml.etree import QName
 
+import hashlib
 
 
 def load_json(file_name):
@@ -13,9 +17,44 @@ def load_json(file_name):
     with open(file_name, "r", encoding="utf-8") as file:
         return json.load(file)
 
+
+def sanitize_latex_expr(latex_expr):
+    # Generate a hash of the sanitized expression to ensure uniqueness
+    hash_object = hashlib.md5(latex_expr.encode())
+    hash_digest = hash_object.hexdigest()[:8]  # Take the first 8 characters of the hash
+
+    # Append the hash to the sanitized expression
+    sanitized_expr_with_hash = f"{hash_digest}.png"
+    
+    return sanitized_expr_with_hash
+
+
+
+def save_latex_image(latex_str, image_filename):
+    """Save LaTeX string as an image."""
+    if not latex_str:
+        print("Empty LaTeX string detected, skipping...")
+        return  # Skip this LaTeX string if it's empty
+
+    try:
+        fig, ax = plt.subplots(figsize=(5, 2))  # You can adjust the size
+        ax.text(0.5, 0.5, f'${latex_str}$', fontsize=20, ha='center', va='center')
+
+        # Remove axes for clean image
+        ax.set_axis_off()
+
+        # Create canvas and save figure
+        canvas = agg.FigureCanvasAgg(fig)
+        canvas.print_figure(image_filename, dpi=300, bbox_inches="tight", pad_inches=0.1)
+
+        plt.close(fig)  # Close the plot to free memory
+    except Exception as e:
+        print(f"Error saving LaTeX image for expression: {latex_str}. Error: {e}")
+
+
+
 def process_question(question, version_id):
     """Randomize variables and update question prompt and choices."""
-    
     # Create a dictionary to store the randomized values
     randomized_values = {}
 
@@ -43,85 +82,123 @@ def process_question(question, version_id):
 
     # Return the processed question with updated prompt, choices, and correct answer
     return {
-        'id': f"{question['id']}_v{version_id}",  # Append version id to make each question unique        'prompt': updated_prompt,
+        'id': f"{question['id']}_v{version_id}",  # Append version id to make each question unique
         'prompt': updated_prompt,
         'choices': updated_choices,
         'correct': updated_correct_answer
     }
 
 def create_qti_package(questions):
-    # Create QTI package with processed questions
+    """Create a QTI package containing questions and images."""
     os.makedirs("qti_temp", exist_ok=True)
+    os.makedirs("qti_temp/images", exist_ok=True)  # Ensure images folder is inside qti_temp
 
     # Generate XML files
     manifest_items = []
+    image_files = []
 
     for i, q in enumerate(questions):
         file_name = f'question{i + 1}.xml'
         file_path = os.path.join("qti_temp", file_name)
         manifest_items.append((file_name, q['id']))
+
+        latex_images = generate_latex_images(q['prompt'], q['choices'], q['id'])
+
+        # Save images for LaTeX equations in prompt and choices
+        for image in latex_images:
+            image_filename = os.path.join("qti_temp/images", image[1])
+            save_latex_image(image[0], image_filename)
+            image_files.append(image_filename) #add image file name for manifest to parse
+
         with open(file_path, "wb") as f:
-            # Encode the string returned by generate_qti_item_xml() into bytes
-            f.write(generate_qti_item_xml(q['id'], q['prompt'], q['choices'], q['correct']).encode('utf-8'))
+            f.write(generate_qti_item_xml(q['id'], q['prompt'], q['choices'], q['correct'], latex_images).encode('utf-8'))
 
-    # Create manifest
+    # Create the manifest XML file
     with open("qti_temp/imsmanifest.xml", "w", encoding="utf-8") as f:
-        # This should write a string, not bytes
-        f.write(generate_manifest_xml(manifest_items))
+        f.write(generate_manifest_xml(manifest_items, image_files))
 
-    # Zip the contents
+    # Zip the contents, including the images folder
     zip_name = "qti_package.zip"
     with zipfile.ZipFile(zip_name, "w", zipfile.ZIP_DEFLATED) as zipf:
         for root, _, files in os.walk("qti_temp"):
             for file in files:
-                zipf.write(os.path.join(root, file), file)
+                zipf.write(os.path.join(root, file), os.path.relpath(os.path.join(root, file), "qti_temp"))
 
     # Clean up
     for file in os.listdir("qti_temp"):
-        os.remove(os.path.join("qti_temp", file))
+        file_path = os.path.join("qti_temp", file)
+        if os.path.isdir(file_path):
+            shutil.rmtree(file_path)
+        else:
+            os.remove(file_path)
     os.rmdir("qti_temp")
 
     return zip_name
 
+def generate_latex_images(prompt, choices, question_id):
+    """Generate images for LaTeX equations in prompt and choices."""
+    latex_images = []
+    for text in [prompt] + choices:
+        latex_matches = re.findall(r'\$(.+?)\$', text)
+        for latex_expr in latex_matches:
+            filename = sanitize_latex_expr(latex_expr)
+            latex_images.append((latex_expr,filename))
+    
+    if not latex_images:
+        print(f"Warning: No LaTeX expressions found for question {question_id}")
+    
+    return latex_images
 
 
-def convert_latex_to_mathjax(text):
-    """Convert LaTeX delimited by $...$ into Canvas-friendly MathJax."""
-    return re.sub(r'\$(.+?)\$', r'<script type="math/tex">\1</script>', text)
-
-def generate_qti_item_xml(question_id, prompt, choices, correct):
+def generate_qti_item_xml(question_id, prompt, choices, correct, latex_images):
     """Generate QTI 1.2 XML for a single multiple choice question."""
     Element = ET.ElementTree
     SubElement = ET.SubElement
 
-    # Convert LaTeX to MathJax HTML format
-    prompt_html = convert_latex_to_mathjax(prompt)
-    choices_html = [convert_latex_to_mathjax(c) for c in choices]
+    # Separate prompt into text and LaTeX expression
+    prompt_text = prompt.split('$')[0].strip()  # Surrounding text before LaTeX
+    prompt_latex = prompt.split('$')[1] if '$' in prompt else ""  # LaTeX expression between $ symbols
 
+    # Create <img> HTML for LaTeX image in prompt
+    prompt_html = f'{prompt_text} <img src="images/{latex_images[0][1]}" alt="Question Image" />'
+
+    # Generate images for each choice and use them in the choices
+    choice_images = []
+    for i, choice in enumerate(choices):
+        choice_text = choice.split('$')[0].strip()  # Surrounding text before LaTeX
+        choice_latex = choice.split('$')[1] if '$' in choice else ""  # LaTeX expression between $ symbols
+
+        # Create <img> HTML for LaTeX image in choice
+        choice_html = f'{choice_text} <img src="images/{latex_images[i + 1][1]}" alt="Choice Image {i + 1}" />'
+        choice_images.append(choice_html)
+
+    # Create the root item element
     item = ET.Element("item", {"ident": question_id, "title": question_id})
 
+    # Add presentation section
     presentation = SubElement(item, "presentation")
     material = SubElement(presentation, "material")
     mattext = SubElement(material, "mattext", attrib={"texttype": "text/html"})
-    # Ensure raw HTML is inserted directly without escaping
-    mattext.text = prompt_html
+    mattext.text = safe_cdata(prompt_html)  # Use safe CDATA for prompt HTML
 
+    # Add response section
     response_lid = SubElement(presentation, "response_lid", attrib={"ident": "response1", "rcardinality": "Single"})
     render_choice = SubElement(response_lid, "render_choice")
 
-    for i, choice_text in enumerate(choices_html):
+    # Add choices to response section
+    for i, choice_html in enumerate(choice_images):
         ident = f"choice{i + 1}"
         response_label = SubElement(render_choice, "response_label", attrib={"ident": ident})
         choice_material = SubElement(response_label, "material")
         choice_mattext = SubElement(choice_material, "mattext", attrib={"texttype": "text/html"})
-        # Ensure raw HTML is inserted directly without escaping
-        choice_mattext.text = choice_text
+        choice_mattext.text = safe_cdata(choice_html)  # Use safe CDATA for choices
 
-    # Resprocessing section
+    # Add resprocessing section for feedback and scoring
     resprocessing = SubElement(item, "resprocessing")
     outcomes = SubElement(resprocessing, "outcomes")
     SubElement(outcomes, "decvar", attrib={"varname": "SCORE", "vartype": "Decimal", "minvalue": "0", "maxvalue": "100", "cutvalue": "50"})
 
+    # Identify correct answer
     correct_index = choices.index(correct)
     correct_ident = f"choice{correct_index + 1}"
 
@@ -132,48 +209,65 @@ def generate_qti_item_xml(question_id, prompt, choices, correct):
     SubElement(respcondition, "setvar", attrib={"action": "Set"}).text = "100"
     SubElement(respcondition, "displayfeedback", attrib={"feedbacktype": "Response", "linkrefid": "correct"})
 
+    # Return the prettified XML
     return prettify(item).decode('utf-8')
 
 
-def generate_manifest_xml(items):
-    """
-    Generate imsmanifest.xml content for a list of QTI items.
-    
-    Args:
-        items (list of tuples): Each tuple contains (filename, identifier)
-    
-    Returns:
-        str: The pretty-printed XML string for the manifest
-    """
+
+def generate_manifest_xml(items, image_files):
+    """Generate imsmanifest.xml content for a list of QTI items and images."""
     ns = {
-        'xmlns': "http://www.imsglobal.org/xsd/imscp_v1p1",
-        'xmlns:imsmd': "http://www.imsglobal.org/xsd/imsmd_v1p2",
-        'xmlns:xsi': "http://www.w3.org/2001/XMLSchema-instance",
-        'xsi:schemaLocation': "http://www.imsglobal.org/xsd/imscp_v1p1 imscp_v1p1.xsd"
+        '': "http://www.imsglobal.org/xsd/imscp_v1p1",  # Default namespace
+        'imsmd': "http://www.imsglobal.org/xsd/imsmd_v1p2",
+        'xsi': "http://www.w3.org/2001/XMLSchema-instance",
     }
 
-    manifest = ET.Element("manifest", attrib={"identifier": "MANIFEST1", **ns})
-    
-    organizations = ET.SubElement(manifest, "organizations")
-    resources = ET.SubElement(manifest, "resources")
+    manifest = ET.Element(
+        QName(ns[''], 'manifest'),
+        {
+            QName(ns['xsi'], 'schemaLocation'): "http://www.imsglobal.org/xsd/imscp_v1p1 imscp_v1p1.xsd"
+        }
+    )
 
+    organizations = ET.SubElement(manifest, QName(ns[''], 'organizations'))
+    resources = ET.SubElement(manifest, QName(ns[''], 'resources'))
+
+    # Add QTI items to the manifest
     for filename, identifier in items:
-        ET.SubElement(resources, "resource", {
-            "identifier": identifier,
-            "type": "imsqti_item_xmlv1p1",
-            "href": filename
-        })
+        ET.SubElement(
+            resources,
+            QName(ns[''], 'resource'),
+            {
+                "identifier": identifier,
+                "type": "imsqti_item_xmlv1p1",
+                "href": filename
+            }
+        )
 
-    # Convert the XML element tree to a string
+    # Add image resources to the manifest
+    for image_filename in image_files:
+        image_identifier = f"image_{os.path.basename(image_filename)}"  # Unique identifier for the image
+        ET.SubElement(
+            resources,
+            QName(ns[''], 'resource'),
+            {
+                "identifier": image_identifier,
+                "type": "image/png",  # Assuming images are in JPEG format, change if needed
+                "href": f"images/{os.path.basename(image_filename)}"
+            }
+        )
+
     return prettify(manifest).decode('utf-8')
 
 
 def prettify(elem):
-    """Return a pretty-printed XML string for the Element."""
-    rough_string = ET.tostring(elem, 'utf-8')
-    reparsed = minidom.parseString(rough_string)
-    return reparsed.toprettyxml(indent="  ", encoding="utf-8")
+    return ET.tostring(elem, pretty_print=True, encoding="utf-8", xml_declaration=True)
 
+def safe_cdata(text):
+    """Ensure text is safe for inclusion inside a CDATA section by replacing ']]>'."""
+    if ']]>' in text:
+        text = text.replace(']]>', ']]&gt;')  # Replace ']]>' with a safe version
+    return ET.CDATA(text)
 
 def main():
     """Main entry point for the script."""
@@ -191,7 +285,5 @@ def main():
     qti_package = create_qti_package(processed_questions)
     print(f"QTI package created: {qti_package}")
 
-
-# Only run the script's main logic if executed directly (not imported as a module)
 if __name__ == "__main__":
     main()
