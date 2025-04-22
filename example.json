@@ -2,17 +2,18 @@
   "questions": [
     {
       "id": "power_rule_diff",
-      "prompt": "Differentiate the function $\\int_0^{~a} f(x) dx$",
+      "prompt": "Differentiate the function $~a x^{~b}$",
       "variables": {
-        "a": [1, -2, -33, 444444]
+        "a": [-1, -2, 2, -3, 4],
+        "b": [2, 3, 4, 5, 6]
       },
       "choices": [
-        "$~a$",
+        "$eval{~a*~b}x^{eval{~b-1}}$",
         "Testing testing $X^2$ 123",
-        "$3$",
-        "$4$"
+        "3",
+        "Something absurd like $\\bigotimes_{n=1}^\\infty A_n$"
       ],
-      "correct": "$~a$"
+      "correct": "$eval{~a*~b}x^{eval{~b-1}}$"
     }
   ]
 }

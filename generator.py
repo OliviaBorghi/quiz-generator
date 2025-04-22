@@ -2,24 +2,21 @@ import json
 import os
 import random
 import zipfile
-from lxml import etree as ET
 import re
 import shutil
-from lxml.etree import QName
 import hashlib
-import html
+import io
 import matplotlib.pyplot as plt
+from lxml import etree as ET
+from lxml.etree import QName
 from matplotlib import rcParams
 from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
-import io
 from PIL import Image
-
 
 def load_json(file_name):
     """Load the JSON file and return its contents."""
     with open(file_name, "r", encoding="utf-8") as file:
         return json.load(file)
-
 
 def sanitize_latex_expr(latex_expr):
     # Generate a hash of the sanitized expression to ensure uniqueness
@@ -30,8 +27,6 @@ def sanitize_latex_expr(latex_expr):
     sanitized_expr_with_hash = f"{hash_digest}.png"
     
     return sanitized_expr_with_hash
-
-
 
 def save_latex_image(latex_str, image_filename, target_px_height=16, fontsize=12, dpi=200, padding_px=4):
     """Render LaTeX as a small inline image (~16px high)."""
@@ -74,7 +69,20 @@ def save_latex_image(latex_str, image_filename, target_px_height=16, fontsize=12
     except Exception as e:
         print(f"Error saving LaTeX image: {latex_str}\n{e}")
 
+def evaluate_embedded_expressions(s: str) -> str:
+    def eval_match(match):
+        expr = match.group(1)
+        try:
+            result = eval(expr)
+        except Exception as e:
+            result = f"[eval error: {e}]"
+        return str(result)
 
+    # Evaluate all nested eval{...} expressions
+    while re.search(r'eval{([^{}]*)}', s):
+        s = re.sub(r'eval{([^{}]*)}', eval_match, s)
+
+    return s
 
 
 def process_question(question, version_id):
@@ -90,6 +98,7 @@ def process_question(question, version_id):
     updated_prompt = question['prompt']
     for var_name, value in randomized_values.items():
         updated_prompt = updated_prompt.replace(f'~{var_name}', str(value))
+        updated_prompt = evaluate_embedded_expressions(updated_prompt)
 
     # Update the choices based on the randomized variables
     updated_choices = []
@@ -97,12 +106,15 @@ def process_question(question, version_id):
         updated_choice = choice
         for var_name, value in randomized_values.items():
             updated_choice = updated_choice.replace(f'~{var_name}', str(value))
+
+        updated_choice = evaluate_embedded_expressions(updated_choice)
         updated_choices.append(updated_choice)
 
     # Update the correct answer based on the randomized variables
     updated_correct_answer = question['correct']
     for var_name, value in randomized_values.items():
         updated_correct_answer = updated_correct_answer.replace(f'~{var_name}', str(value))
+    updated_correct_answer = evaluate_embedded_expressions(updated_correct_answer)
 
     # Return the processed question with updated prompt, choices, and correct answer
     return {
@@ -173,7 +185,6 @@ def generate_latex_images(prompt, choices, question_id):
     
     return latex_images
 
-
 def process_text_with_latex(prompt, latex_images, image_index):
     """
     Process a text prompt, extract LaTeX expressions, and return the text along with a list of LaTeX expressions
@@ -215,8 +226,6 @@ def process_text_with_latex(prompt, latex_images, image_index):
             final_html += f'<img src="images/{latex_images[image_index][1]}" alt="LaTeX Image" />'  # Placeholder for LaTeX images
             image_index +=1
     return final_html, image_index
-
-
 
 def generate_qti_item_xml(question_id, prompt, choices, correct, latex_images):
     """Generate QTI 1.2 XML for a single multiple choice question."""
@@ -281,7 +290,6 @@ def generate_qti_item_xml(question_id, prompt, choices, correct, latex_images):
     # Prettify the XML output using the prettify function
     return prettify(questestinterop)
 
-
 def generate_manifest_xml(items, image_files):
     """Generate imsmanifest.xml content for a list of QTI items and images."""
     ns = {
@@ -336,7 +344,6 @@ def wrap_with_qti_structure(item_xml):
 
     return qti_header + item_xml + qti_footer
 
-
 def prettify(elem):
     # Using lxml's tostring function with no escape
     # Serialize the tree to a string with 'xml' encoding, no escaping
@@ -348,7 +355,6 @@ def prettify(elem):
     xml_str = xml_str.replace("&lt;", "<").replace("&gt;", ">").replace("&amp;", "&")
     xml_str = xml_str.replace("ns0:", '').replace("/ns0:",'')
     return xml_str
-
 
 def main():
     """Main entry point for the script."""
