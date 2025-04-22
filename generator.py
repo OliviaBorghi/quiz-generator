@@ -6,6 +6,7 @@ import re
 import shutil
 import hashlib
 import io
+import urllib.parse
 import matplotlib.pyplot as plt
 from lxml import etree as ET
 from lxml.etree import QName
@@ -83,6 +84,16 @@ def evaluate_embedded_expressions(s: str) -> str:
         s = re.sub(r'eval{([^{}]*)}', eval_match, s)
 
     return s
+
+
+def canvas_latex_image_url(latex: str, base_url: str = "https://canvas.lms.unimelb.edu.au/equation_images", scale: int = 1) -> str:
+    # First encode
+    first_encoded = urllib.parse.quote(latex)
+    # Then encode again
+    double_encoded = urllib.parse.quote(first_encoded)
+    # Build the final URL
+    return f"{base_url}/{double_encoded}?scale={scale}"
+
 
 
 def process_question(question, version_id):
