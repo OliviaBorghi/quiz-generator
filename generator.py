@@ -33,7 +33,7 @@ def sanitize_latex_expr(latex_expr):
 
 
 
-def save_latex_image(latex_str, image_filename, target_px_height=16, fontsize=12, dpi=200):
+def save_latex_image(latex_str, image_filename, target_px_height=16, fontsize=12, dpi=200, padding_px=4):
     """Render LaTeX as a small inline image (~16px high)."""
     if not latex_str.strip():
         print("Empty LaTeX string detected, skipping...")
@@ -55,22 +55,21 @@ def save_latex_image(latex_str, image_filename, target_px_height=16, fontsize=12
         # Get bounding box of the text
         bbox = text.get_window_extent(renderer=canvas.get_renderer())
         bbox_inches = bbox.transformed(fig.dpi_scale_trans.inverted())
-        fig.set_size_inches(bbox_inches.width, bbox_inches.height)
 
-        # Render to a buffer
-        buf = io.BytesIO()
-        fig.savefig(buf, dpi=dpi, bbox_inches='tight', pad_inches=0.0, transparent=True)
-        buf.seek(0)
+        # Add padding in inches
+        padding_inch = padding_px / dpi
+        padded_bbox = bbox_inches.expanded(1.0 + padding_inch / bbox_inches.width,
+                                           1.0 + padding_inch / bbox_inches.height)
+
+        # Resize the figure to match the new padded bounding box
+        fig.set_size_inches(padded_bbox.width, padded_bbox.height)
+
+        # Render again and save
+        canvas.draw()
+        fig.savefig(image_filename, dpi=dpi, bbox_inches='tight', pad_inches=padding_inch, transparent=True)
+
         plt.close(fig)
 
-        # Resize using PIL to match target height
-        img = Image.open(buf)
-        w, h = img.size
-        new_h = target_px_height
-        new_w = int((new_h / h) * w)
-        img = img.resize((new_w, new_h), Image.LANCZOS)
-
-        img.save(image_filename)
 
     except Exception as e:
         print(f"Error saving LaTeX image: {latex_str}\n{e}")
@@ -175,34 +174,64 @@ def generate_latex_images(prompt, choices, question_id):
     return latex_images
 
 
+def process_text_with_latex(prompt, latex_images, image_index):
+    """
+    Process a text prompt, extract LaTeX expressions, and return the text along with a list of LaTeX expressions
+    for image generation. This function does not call `save_latex_image`, leaving that to be handled elsewhere.
+    """
+
+    # Regular expression to find LaTeX expressions between $...$
+    latex_pattern = r'(\$.*?\$)'  # Non-greedy match for $...$
+
+    segments = []
+    last_index = 0
+
+    # Process the prompt and find LaTeX expressions
+    for match in re.finditer(latex_pattern, prompt):
+        start, end = match.span()
+        
+        # Add regular text before LaTeX expression
+        if start > last_index:
+            segments.append(('text', prompt[last_index:start]))  # Regular text before LaTeX
+
+        # Extract the LaTeX expression (without the $ symbols)
+        latex_str = prompt[start + 1:end - 1]  # Remove $ symbols
+
+        # Add LaTeX image placeholder (just the placeholder for now)
+        segments.append(('latex', latex_str))  # Store LaTeX expression as a placeholder
+
+        last_index = end  # Update the last index for the next segment
+
+    # Add any remaining text after the last LaTeX expression
+    if last_index < len(prompt):
+        segments.append(('text', prompt[last_index:]))
+
+    # Now, construct the final HTML with <img> tags for LaTeX images
+    final_html = ""
+    for segment_type, content in segments:
+        if segment_type == 'text':
+            final_html += content  # Add regular text directly
+        elif segment_type == 'latex':
+            final_html += f'<img src="images/{latex_images[image_index][1]}" alt="LaTeX Image" />'  # Placeholder for LaTeX images
+            image_index +=1
+    return final_html, image_index
+
+
+
 def generate_qti_item_xml(question_id, prompt, choices, correct, latex_images):
     """Generate QTI 1.2 XML for a single multiple choice question."""
     Element = ET.ElementTree
     SubElement = ET.SubElement
 
-    # Separate prompt into text and LaTeX expression
-    prompt_text = prompt.split('$')[0].strip()  # Surrounding text before LaTeX
-    prompt_latex = prompt.split('$')[1] if '$' in prompt else ""  # LaTeX expression between $ symbols
-
-    # Create <img> HTML for LaTeX image in prompt
-    if prompt_latex:
-        prompt_html = f'{prompt_text} <img src="images/{latex_images[0][1]}" alt="Question Image" />'
-    else:
-        prompt_html = f'{prompt_text}'
+    prompt_html, image_index = process_text_with_latex(prompt,latex_images,0)
 
     # Generate images for each choice and use them in the choices
     choice_images = []
-    for i, choice in enumerate(choices):
-        choice_text = choice.split('$')[0].strip()  # Surrounding text before LaTeX
-        choice_latex = choice.split('$')[1] if '$' in choice else ""  # LaTeX expression between $ symbols
-
+    for choice in choices:
+        choice_html, image_index = process_text_with_latex(choice, latex_images, image_index)
         # Create <img> HTML for LaTeX image in choice
-        if choice_latex:
-            choice_html = f'{choice_text} <img src="images/{latex_images[i + 1][1]}" alt="Choice Image {i + 1}" />'
-            choice_images.append(choice_html)
+        choice_images.append(choice_html)
 
-        else:
-            choice_html = f'{choice_text}'
 
     # Create the root item element
     item = ET.Element("item", {"ident": question_id, "title": question_id})
