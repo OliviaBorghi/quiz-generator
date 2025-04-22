@@ -4,14 +4,15 @@ import random
 import zipfile
 from lxml import etree as ET
 import re
-import matplotlib.pyplot as plt
 import shutil
-import matplotlib.backends.backend_agg as agg
 from lxml.etree import QName
-
 import hashlib
-
 import html
+import matplotlib.pyplot as plt
+from matplotlib import rcParams
+from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
+import io
+from PIL import Image
 
 
 def load_json(file_name):
@@ -32,30 +33,48 @@ def sanitize_latex_expr(latex_expr):
 
 
 
-def save_latex_image(latex_str, image_filename):
-    """Save LaTeX string as a compact image with dynamic figure size."""
-    if not latex_str:
+def save_latex_image(latex_str, image_filename, target_px_height=16, fontsize=12, dpi=200):
+    """Render LaTeX as a small inline image (~16px high)."""
+    if not latex_str.strip():
         print("Empty LaTeX string detected, skipping...")
         return
 
     try:
-        # Estimate width based on string length (characters) — tune scaling as needed
-        base_width = 0  # Minimum width
-        width_per_char = 0.01  # Add this much width per character
-        estimated_width = base_width + width_per_char * len(latex_str)
-        height = 0.4  # Constant height for inline math
+        rcParams.update({
+            "text.usetex": False,
+            "mathtext.fontset": "cm",
+            "font.size": fontsize,
+        })
 
-        fig, ax = plt.subplots(figsize=(estimated_width, height))
-        ax.text(0.5, 0.5, f'${latex_str}$', fontsize=14, ha='center', va='center')
+        fig = plt.figure(figsize=(0.01, 0.01))
+        text = fig.text(0, 0, f"${latex_str}$", fontsize=fontsize)
 
-        ax.set_axis_off()
+        canvas = FigureCanvas(fig)
+        canvas.draw()
 
-        canvas = agg.FigureCanvasAgg(fig)
-        canvas.print_figure(image_filename, dpi=200, bbox_inches='tight', pad_inches=0.05)
+        # Get bounding box of the text
+        bbox = text.get_window_extent(renderer=canvas.get_renderer())
+        bbox_inches = bbox.transformed(fig.dpi_scale_trans.inverted())
+        fig.set_size_inches(bbox_inches.width, bbox_inches.height)
 
+        # Render to a buffer
+        buf = io.BytesIO()
+        fig.savefig(buf, dpi=dpi, bbox_inches='tight', pad_inches=0.0, transparent=True)
+        buf.seek(0)
         plt.close(fig)
+
+        # Resize using PIL to match target height
+        img = Image.open(buf)
+        w, h = img.size
+        new_h = target_px_height
+        new_w = int((new_h / h) * w)
+        img = img.resize((new_w, new_h), Image.LANCZOS)
+
+        img.save(image_filename)
+
     except Exception as e:
-        print(f"Error saving LaTeX image for expression: {latex_str}. Error: {e}")
+        print(f"Error saving LaTeX image: {latex_str}\n{e}")
+
 
 
 
@@ -310,7 +329,7 @@ def main():
     processed_questions = []
     version_id = 1
     for q in questions:
-        for _ in range(4):  # Creating 4 randomized versions of each question
+        for _ in range(1):  # Creating 4 randomized versions of each question
             processed_questions.append(process_question(q, version_id))
             version_id += 1
     
