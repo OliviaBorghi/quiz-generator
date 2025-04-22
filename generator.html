@@ -1,91 +1,115 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Question JSON Generator</title>
-    <style>
-        body { font-family: Arial, sans-serif; }
-        .container { width: 50%; margin: 0 auto; }
-        label { display: block; margin: 10px 0; }
-        input, textarea { width: 100%; padding: 8px; margin-bottom: 10px; }
-        button { padding: 10px 15px; background-color: #4CAF50; color: white; border: none; cursor: pointer; }
-        button:hover { background-color: #45a049; }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Quiz JSON Generator</title>
+  <style>
+    body { font-family: Arial, sans-serif; }
+    .container { width: 60%; margin: 0 auto; }
+    label { display: block; margin: 10px 0 5px; }
+    input, textarea, select {
+      width: 100%; padding: 8px; margin-bottom: 10px;
+    }
+    button {
+      padding: 10px 15px; background-color: #4CAF50;
+      color: white; border: none; cursor: pointer;
+    }
+    button:hover { background-color: #45a049; }
+  </style>
 </head>
 <body>
-    <div class="container">
-        <h1>Question JSON Generator</h1>
-        <form id="questionForm">
-            <label for="prompt">Question Prompt:</label>
-            <textarea id="prompt" placeholder='Please place a ~ before variables you wish to be randomized i.e. $~ax^{~b}$' required></textarea>
+  <div class="container">
+    <h1>Quiz JSON Generator</h1>
+    <form id="quizForm">
+      <label for="quizName">Quiz Name:</label>
+      <input type="text" id="quizName" placeholder="Revision Quiz" required>
 
-            <label for="variables">Variables (as JSON):</label>
-            <textarea id="variables" placeholder='{"a": [1, 2, 3], "b": [4, 5, 6]}' required></textarea>
+      <label for="description">Quiz Description:</label>
+      <textarea id="description" placeholder="Enter a short description..." required></textarea>
 
-            <label for="choices">Choices (comma separated):</label>
-            <input type="text" id="choices" placeholder="A, B, C, D" required>
+      <label for="shuffleAnswers">Shuffle Answers?</label>
+      <select id="shuffleAnswers">
+        <option value="true">Yes</option>
+        <option value="false">No</option>
+      </select>
 
-            <label for="correct">Correct Answer:</label>
-            <input type="text" id="correct" placeholder="$(~b*~a)x^{~b-1}$" required>
+      <label for="points">Points Possible:</label>
+      <input type="number" id="points" placeholder="8" required>
 
-            <button type="button" onclick="generateJson()">Generate JSON</button>
-        </form>
+      <label for="attempts">Allowed Attempts:</label>
+      <input type="number" id="attempts" placeholder="1" required>
 
-        <div id="jsonOutput" style="margin-top: 20px;"></div>
-    </div>
+      <hr>
 
-    <script>
-        function generateJson() {
-    // Get input values
-    const prompt = document.getElementById("prompt").value;
-    const variablesInput = document.getElementById("variables").value;
-    const choices = document.getElementById("choices").value.split(",").map(choice => choice.trim());
-    const correct = document.getElementById("correct").value;
+      <label for="prompt">Question Prompt:</label>
+      <textarea id="prompt" placeholder='Use ~ for variables like $~ax^{~b} anything you wish to be evaluated should be wrapped in evla{}$' required></textarea>
 
-    try {
-        // Parse variables as JSON
+      <label for="variables">Variables (as JSON):</label>
+      <textarea id="variables" placeholder='{"a": [1, 2, 3], "b": [4, 5, 6]}' required></textarea>
+
+      <label for="choices">Choices (comma separated):</label>
+      <input type="text" id="choices" placeholder="A, B, C, D" required>
+
+      <label for="correct">Correct Answer:</label>
+      <input type="text" id="correct" placeholder="$(~b*~a)x^{~b-1}$" required>
+
+      <button type="button" onclick="generateJson()">Generate JSON</button>
+    </form>
+
+    <div id="jsonOutput" style="margin-top: 20px;"></div>
+  </div>
+
+  <script>
+    function generateJson() {
+      const quizName = document.getElementById("quizName").value;
+      const description = document.getElementById("description").value;
+      const shuffleAnswers = document.getElementById("shuffleAnswers").value === "true";
+      const points = parseFloat(document.getElementById("points").value);
+      const attempts = parseInt(document.getElementById("attempts").value, 10);
+
+      const prompt = document.getElementById("prompt").value;
+      const variablesInput = document.getElementById("variables").value;
+      const choices = document.getElementById("choices").value.split(",").map(choice => choice.trim());
+      const correct = document.getElementById("correct").value;
+
+      try {
         const variables = JSON.parse(variablesInput);
 
-        // Create the JSON structure
-        const question = {
+        const quiz = {
+          quiz_name: quizName,
+          description: description,
+          shuffle_answers: shuffleAnswers,
+          points_possible: points,
+          allowed_attempts: attempts,
+          questions: [{
             prompt: prompt,
             variables: variables,
             choices: choices,
             correct: correct
+          }]
         };
 
-        // Custom formatting function for arrays
-        function customStringify(obj) {
-            return JSON.stringify(obj, (key, value) => {
-                // If the value is an array, return it as a single line
-                if (Array.isArray(value)) {
-                    return "[" + value.join(", ") + "]";
-                }
-                return value;
-            }, 2);
-        }
+        const jsonString = JSON.stringify(quiz, (key, value) => {
+          if (Array.isArray(value)) {
+            return "[" + value.join(", ") + "]";
+          }
+          return value;
+        }, 2);
 
-        // Format the question object with our custom stringify function
-        const jsonString = customStringify(question);
-
-        // Display the JSON output
         const jsonOutput = document.getElementById("jsonOutput");
         jsonOutput.innerHTML = "<pre>" + jsonString + "</pre>";
 
-        // Create a downloadable link for the JSON file
         const jsonBlob = new Blob([jsonString], { type: 'application/json' });
         const downloadLink = document.createElement("a");
         downloadLink.href = URL.createObjectURL(jsonBlob);
-        downloadLink.download = "question.json";
+        downloadLink.download = "quiz.json";
         downloadLink.textContent = "Download JSON File";
         jsonOutput.appendChild(downloadLink);
-
-    } catch (error) {
+      } catch (error) {
         alert("Invalid JSON in variables. Please check your input.");
+      }
     }
-}
-
-    </script>
+  </script>
 </body>
 </html>
