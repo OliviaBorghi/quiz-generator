@@ -6,7 +6,7 @@ import re
 import shutil
 import hashlib
 import io
-import urlib.parse
+import urllib
 from lxml import etree as ET
 from lxml.etree import QName
 
@@ -16,33 +16,20 @@ def load_json(file_name):
         return json.load(file)
 
 def generate_equation_url(equation):
-    # First encoding of the LaTeX equation
-    first_encoded_equation = urllib.parse.quote(equation)
+    # Encode the LaTeX equation twice as required by Canvas
+    first_encoded = urllib.parse.quote(equation)
+    double_encoded = urllib.parse.quote(first_encoded)
     
-    # Second encoding of the already-encoded LaTeX equation
-    second_encoded_equation = urllib.parse.quote(first_encoded_equation)
-    
-    # Construct the URL for the LaTeX image with double-encoded equation
     base_url = "https://canvas.lms.unimelb.edu.au/equation_images/"
-    url = f"{base_url}{second_encoded_equation}?scale=1"
-    
-    # Create the <mattext> tag with the URL-based image
-    mattext_content = f"""
-    <mattext texttype="text/html">
-        &lt;div&gt;&lt;p&gt;Compute &lt;img class="equation_image" title="{equation}" 
-        src="{url}" alt="LaTeX: {equation}" 
-        data-equation-content="{equation}" data-ignore-a11y-check="" loading="lazy"&gt;&lt;/p&gt;&lt;/div&gt;
-    </mattext>
-    """
-    
-    return mattext_content
+    return f"{base_url}{double_encoded}?scale=1"
+
 
 def evaluate_embedded_expressions(s: str) -> str:
     def eval_match(match):
         expr = match.group(1)
         try:
             result = eval(expr)
-        except Exception as e:image
+        except Exception as e:
             result = f"[eval error: {e}]"
         return str(result)
 
@@ -51,7 +38,6 @@ def evaluate_embedded_expressions(s: str) -> str:
         s = re.sub(r'eval{([^{}]*)}', eval_match, s)
 
     return s
-
 
 def process_question(question, version_id):
     """Randomize variables and update question prompt and choices."""
@@ -104,11 +90,11 @@ def create_qti_package(questions):
         file_path = os.path.join("qti_temp", file_name)
         manifest_items.append((file_name, q['id']))
         with open(file_path, "wb") as f:
-            f.write(generate_qti_item_xml(q['id'], q['prompt'], q['choices'], q['correct'], latex_images).encode('utf-8'))
+            f.write(generate_qti_item_xml(q['id'], q['prompt'], q['choices'], q['correct']).encode('utf-8'))
 
     # Create the manifest XML file
     with open("qti_temp/imsmanifest.xml", "w", encoding="utf-8") as f:
-        f.write(generate_manifest_xml(manifest_items, image_files))
+        f.write(generate_manifest_xml(manifest_items))
 
     # Zip the contents
     zip_name = "qti_package.zip"
@@ -129,51 +115,36 @@ def create_qti_package(questions):
     return zip_name
 
 def process_text_with_latex(prompt):
-    """
-    Process a text prompt, extract LaTeX expressions, and return the text along with a list of LaTeX expressions
-    for image URL generation. This function will now add generated URLs for LaTeX equations.
-    """
-
-    # Regular expression to find LaTeX expressions between $...$
-    latex_pattern = r'(\$.*?\$)'  # Non-greedy match for $...$
-
+    """Replace $...$ with <img> tags linking to Canvas-rendered LaTeX images."""
+    latex_pattern = r'(\$.*?\$)'
     segments = []
     last_index = 0
 
-    # Process the prompt and find LaTeX expressions
     for match in re.finditer(latex_pattern, prompt):
         start, end = match.span()
-        
-        # Add regular text before LaTeX expression
+
         if start > last_index:
-            segments.append(('text', prompt[last_index:start]))  # Regular text before LaTeX
+            segments.append(('text', prompt[last_index:start]))
 
-        # Extract the LaTeX expression (without the $ symbols)
-        latex_str = prompt[start + 1:end - 1]  # Remove $ symbols
+        latex_code = match.group(0)[1:-1]  # strip the $ symbols
+        img_url = generate_equation_url(latex_code)
+        img_tag = (
+            f'<img class="equation_image" title="{latex_code}" '
+            f'src="{img_url}" alt="LaTeX: {latex_code}" '
+            f'data-equation-content="{latex_code}" loading="lazy" />'
+        )
+        segments.append(('img', img_tag))
 
-        # Generate URL for the LaTeX equation
-        url = generate_equation_url(latex_str)  # Assuming generate_equation_url is defined as per your earlier request
+        last_index = end
 
-        # Add LaTeX equation URL (instead of image placeholder)
-        segments.append(('latex', url))  # Store the URL of the LaTeX equation
-
-        last_index = end  # Update the last index for the next segment
-
-    # Add any remaining text after the last LaTeX expression
     if last_index < len(prompt):
         segments.append(('text', prompt[last_index:]))
 
-    # Now, construct the final HTML with <img> tags for LaTeX URLs
     final_html = ""
-    for segment_type, content in segments:
-        if segment_type == 'text':
-            final_html += content  # Add regular text directly
-        elif segment_type == 'latex':
-            # Use the generated LaTeX URL 
-            final_html += f'<img class="equation_image" title="{content}" src="{content}" alt="LaTeX: {content}" data-equation-content="{content}" loading="lazy" />'
-    
-    return final_html
+    for typ, content in segments:
+        final_html += content
 
+    return final_html
 
 def generate_qti_item_xml(question_id, prompt, choices, correct):
     """Generate QTI 1.2 XML for a single multiple choice question."""
@@ -275,17 +246,6 @@ def generate_manifest_xml(items):
         
     return prettify(manifest)
 
-def wrap_with_qti_structure(item_xml):
-    qti_header = '''<?xml version="1.0" encoding="UTF-8"?>
-<questestinterop>
-  <assessment title="My Quiz">
-    <section ident="root_section">
-'''
-    qti_footer = '''    </section>
-  </assessment>
-</questestinterop>'''
-
-    return qti_header + item_xml + qti_footer
 
 def prettify(elem):
     # Using lxml's tostring function with no escape
