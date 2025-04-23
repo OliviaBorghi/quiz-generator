@@ -1,0 +1,46 @@
+<?xml version='1.0' encoding='utf-8'?>
+<questestinterop>
+  <item ident="power_rule_diff_v1" title="power_rule_diff_v1">
+    <presentation>
+      <material>
+        <mattext texttype="text/html">Differentiate the function <img class="equation_image" title="4 x^{3}" src="https://canvas.lms.unimelb.edu.au/equation_images/4%2520x%255E%257B3%257D?scale=1" alt="LaTeX: 4 x^{3}" data-equation-content="4 x^{3}" data-ignore-a11y-check="" loading="lazy"></mattext>
+      </material>
+      <response_lid ident="response1" rcardinality="Single">
+        <render_choice>
+          <response_label ident="choice1">
+            <material>
+              <mattext texttype="text/html"><img class="equation_image" title="12x^{2}" src="https://canvas.lms.unimelb.edu.au/equation_images/12x%255E%257B2%257D?scale=1" alt="LaTeX: 12x^{2}" data-equation-content="12x^{2}" data-ignore-a11y-check="" loading="lazy"></mattext>
+            </material>
+          </response_label>
+          <response_label ident="choice2">
+            <material>
+              <mattext texttype="text/html">Testing testing <img class="equation_image" title="X^2" src="https://canvas.lms.unimelb.edu.au/equation_images/X%255E2?scale=1" alt="LaTeX: X^2" data-equation-content="X^2" data-ignore-a11y-check="" loading="lazy"> 123</mattext>
+            </material>
+          </response_label>
+          <response_label ident="choice3">
+            <material>
+              <mattext texttype="text/html">3</mattext>
+            </material>
+          </response_label>
+          <response_label ident="choice4">
+            <material>
+              <mattext texttype="text/html">Something absurd like <img class="equation_image" title="\bigotimes_{n=1}^\infty A_n" src="https://canvas.lms.unimelb.edu.au/equation_images/%255Cbigotimes_%257Bn%253D1%257D%255E%255Cinfty%2520A_n?scale=1" alt="LaTeX: \bigotimes_{n=1}^\infty A_n" data-equation-content="\bigotimes_{n=1}^\infty A_n" data-ignore-a11y-check="" loading="lazy"></mattext>
+            </material>
+          </response_label>
+        </render_choice>
+      </response_lid>
+    </presentation>
+    <resprocessing>
+      <outcomes>
+        <decvar varname="SCORE" vartype="Decimal" minvalue="0" maxvalue="100" cutvalue="50"/>
+      </outcomes>
+      <respcondition continue="No">
+        <conditionvar>
+          <varequal respident="response1">choice1</varequal>
+        </conditionvar>
+        <setvar action="Set">100</setvar>
+        <displayfeedback feedbacktype="Response" linkrefid="correct"/>
+      </respcondition>
+    </resprocessing>
+  </item>
+</questestinterop>

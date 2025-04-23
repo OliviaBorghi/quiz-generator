@@ -2,12 +2,7 @@
 <manifest xmlns:ns0="http://www.imsglobal.org/xsd/imscp_v1p1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.imsglobal.org/xsd/imscp_v1p1 imscp_v1p1.xsd http://www.imsglobal.org/xsd/imsqti_v1p2 imsqti_v1p2.xsd" identifier="man00001">
   <organizations/>
   <resources>
-    <resource identifier="power_rule_diff_v1" type="imsqti_xmlv1p2" href="question1.xml">
-      <file href="question1.xml"/>
-      <file href="images/ab905cdb.png"/>
-      <file href="images/4b2516aa.png"/>
-      <file href="images/75299c25.png"/>
-      <file href="images/e035418e.png"/>
-    </resource>
+    <resource identifier="res_question1.xml" type="imsqti_item_xmlv1p2" href="question1.xml"/>
+    <resource identifier="res_assessment_meta" type="imsqti_test_xmlv1p2" href="assessment_meta.xml"/>
   </resources>
 </manifest>
